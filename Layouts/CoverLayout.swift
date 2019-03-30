@@ -11,6 +11,11 @@ class CoverLayout : UICollectionViewFlowLayout {
     
     private let scale: CGFloat = 0.8
     
+    override var collectionViewContentSize: CGSize {
+        let leftmostEdge = cachedItemsAttributes.values.map { $0.frame.minX }.min() ?? 0
+        let rightmostEdge = cachedItemsAttributes.values.map { $0.frame.maxX }.max() ?? 0
+        return CGSize(width: rightmostEdge - leftmostEdge, height: itemSize.height)
+    }
     
     override open func prepare() {
         super.prepare()
@@ -61,6 +66,7 @@ class CoverLayout : UICollectionViewFlowLayout {
             for itemAttributes in attributes {
                 let itemAttributesCopy = itemAttributes.copy() as! UICollectionViewLayoutAttributes
                 changeLayoutAttributes(itemAttributesCopy)
+                
                 cachedItemsAttributes[itemAttributes.indexPath] = itemAttributesCopy
             }
             return cachedItemsAttributes.map { $0.value }.filter { $0.frame.intersects(rect) }
@@ -94,13 +100,12 @@ class CoverLayout : UICollectionViewFlowLayout {
         let collectionCenter = collectionView!.frame.size.width/2
         let offset = collectionView!.contentOffset.x
         let normalizedCenter = attributes.center.x - offset
-        
+    
         let maxDistance = self.itemSize.width + self.minimumLineSpacing
         let distance = min(abs(collectionCenter - normalizedCenter), maxDistance)
         
         let ratio = (maxDistance - distance)/maxDistance
         let scale = ratio * (1 - self.scale) + self.scale
-        
         attributes.transform3D = CATransform3DScale(CATransform3DIdentity, scale, scale, 1)
     }
 }

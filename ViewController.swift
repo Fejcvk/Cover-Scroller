@@ -48,6 +48,7 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         super.viewWillTransition(to: size, with: coordinator)
         let indexPath = IndexPath(item: self.currentPage + 1, section: 0)
 
+        
         coordinator.animate(alongsideTransition: { (_) in
             self.collectionView.collectionViewLayout.invalidateLayout() // layout update
             self.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
@@ -65,6 +66,7 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         
         collectionView.register(CoverCell.self, forCellWithReuseIdentifier: "covecell")
         collectionView.backgroundColor = .white
+        
     }
     
     private func getItemWidth() -> CGFloat{
@@ -88,9 +90,6 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
             return 0
         }
-        
-        func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
-            print(indexPath)
-        }
+
 }
 
