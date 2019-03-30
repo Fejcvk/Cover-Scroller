@@ -12,7 +12,7 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     
     var tileArray:Array<Int> = []
     let itemHeight: CGFloat = CGFloat(200)
-    
+    var currentPage: Int = 0
     
     var collectionView : UICollectionView {
         return self.view as! UICollectionView
@@ -32,7 +32,6 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     override func loadView() {
         self.view = UICollectionView(frame:.zero, collectionViewLayout: self.layout)
         self.tileArray = Array(0...99)
-
     }
     
     func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -> UICollectionViewCell {
@@ -45,21 +44,13 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         return cell
     }
     
-    private func setInset(newSize: CGSize?) {
-        let YInset:CGFloat
-        if !(newSize == nil){
-            YInset = (newSize!.height - itemHeight)/2
-        } else {
-        YInset = (collectionView.bounds.height - itemHeight)/2
-        }
-        collectionView.contentInset = UIEdgeInsets(top: YInset, left: 5, bottom: YInset, right: 5)
-    }
-    
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
-        setInset(newSize: size)
+        let indexPath = IndexPath(item: self.currentPage + 1, section: 0)
+
         coordinator.animate(alongsideTransition: { (_) in
             self.collectionView.collectionViewLayout.invalidateLayout() // layout update
+            self.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         }, completion: nil)
     }
     
@@ -80,20 +71,26 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         return ((collectionView.bounds.width) / CGFloat(3.0)) - 10
     }
     
-//    func scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
-//        self.collectionView.scrollToItem(at: IndexPath(item: 12, section: 0), at: .left, animated: true)
-//    }
+    func  scrollViewWillEndDragging(_ scrollView: UIScrollView, withVelocity velocity: CGPoint, targetContentOffset: UnsafeMutablePointer<CGPoint>) {
+        let cellWidthIncludingSpacing = layout.itemSize.width + layout.minimumLineSpacing
+        var offset = targetContentOffset.pointee
+        let index = (offset.x + scrollView.contentInset.left) / cellWidthIncludingSpacing
+        let roundedIndex = round(index)
+        self.currentPage = Int(roundedIndex)
+        offset = CGPoint(x: roundedIndex * cellWidthIncludingSpacing - scrollView.contentInset.left, y: -scrollView.contentInset.top)
+        targetContentOffset.pointee = offset
+    }
 }
+    
 
     extension ViewController : UICollectionViewDelegateFlowLayout {
-        func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-            let itemWidht: CGFloat = getItemWidth()
-            setInset(newSize: nil)
-            return CGSize(width: itemWidht, height: itemHeight)
-        }
         
         func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumInteritemSpacingForSectionAt section: Int) -> CGFloat {
             return 0
+        }
+        
+        func collectionView(_ collectionView: UICollectionView, didHighlightItemAt indexPath: IndexPath) {
+            print(indexPath)
         }
 }
 
