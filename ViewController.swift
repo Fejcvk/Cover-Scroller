@@ -17,7 +17,6 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
     var collectionView : UICollectionView {
         return self.view as! UICollectionView
     }
-
     
     let layout = CoverLayout.init()
 
@@ -40,19 +39,27 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         cell.numberLabel.text = String(tileArray[indexPath.row])
         cell.numberLabel.sizeToFit()
         cell.numberLabel.textColor = .white
-        cell.backgroundColor = .blue
+
+        
         return cell
     }
     
     override func viewWillTransition(to size: CGSize, with coordinator: UIViewControllerTransitionCoordinator) {
         super.viewWillTransition(to: size, with: coordinator)
         let indexPath = IndexPath(item: self.currentPage + 1, section: 0)
-
         
         coordinator.animate(alongsideTransition: { (_) in
             self.collectionView.collectionViewLayout.invalidateLayout() // layout update
             self.collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
         }, completion: nil)
+    }
+    
+    private func findClosestAttributes(toXPosition xPosition: CGFloat) -> UICollectionViewLayoutAttributes? {
+        let searchRect = CGRect(
+            x: xPosition - collectionView.bounds.width, y: collectionView.bounds.minY,
+            width: collectionView.bounds.width * 2, height: collectionView.bounds.height
+        )
+        return layout.layoutAttributesForElements(in: searchRect)?.min(by: { abs($0.center.x - xPosition) < abs($1.center.x - xPosition) })
     }
     
     override func viewDidLoad() {
@@ -66,9 +73,10 @@ class ViewController: UIViewController, UICollectionViewDelegate, UICollectionVi
         
         collectionView.register(CoverCell.self, forCellWithReuseIdentifier: "covecell")
         collectionView.backgroundColor = .white
+
         
     }
-    
+
     private func getItemWidth() -> CGFloat{
         return ((collectionView.bounds.width) / CGFloat(3.0)) - 10
     }

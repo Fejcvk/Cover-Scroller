@@ -5,9 +5,32 @@
 
 import UIKit
 
+
+class CoverLayoutAttributes : UICollectionViewLayoutAttributes {
+    var scrollPercentage: CGFloat = 0
+    override func copy(with zone: NSZone? = nil) -> Any {
+        let copy = super.copy(with: zone) as! CoverLayoutAttributes
+        copy.scrollPercentage = self.scrollPercentage
+        return copy
+    }
+    
+    override func isEqual(_ object: Any?) -> Bool {
+        if let rhs = object as? CoverLayoutAttributes {
+            if scrollPercentage != rhs.scrollPercentage {
+                return false
+            }
+            return super.isEqual(object)
+        } else {
+            return false
+        }
+    }
+}
+
+
+
 class CoverLayout : UICollectionViewFlowLayout {
     
-    private var cachedItemsAttributes: [IndexPath:UICollectionViewLayoutAttributes] = [:]
+    private var cachedItemsAttributes: [IndexPath:CoverLayoutAttributes] = [:]
     
     private let scale: CGFloat = 0.8
     
@@ -31,8 +54,8 @@ class CoverLayout : UICollectionViewFlowLayout {
         }
     }
     
-    private func createAttributesForItem(at indexPath: IndexPath) -> UICollectionViewLayoutAttributes? {
-        let attributes = UICollectionViewLayoutAttributes(forCellWith: indexPath)
+    private func createAttributesForItem(at indexPath: IndexPath) -> CoverLayoutAttributes? {
+        let attributes = CoverLayoutAttributes(forCellWith: indexPath)
         guard let collectionView = collectionView else { return nil }
         attributes.frame.size = itemSize
         attributes.frame.origin.y = (collectionView.bounds.height - itemSize.height) / 2
@@ -64,10 +87,13 @@ class CoverLayout : UICollectionViewFlowLayout {
             let attributes = cachedItemsAttributes.map { $0.value }.filter { $0.frame.intersects(rect) }
             
             for itemAttributes in attributes {
-                let itemAttributesCopy = itemAttributes.copy() as! UICollectionViewLayoutAttributes
+                let itemAttributesCopy = itemAttributes.copy() as! CoverLayoutAttributes
+                
                 changeLayoutAttributes(itemAttributesCopy)
                 
-                cachedItemsAttributes[itemAttributes.indexPath] = itemAttributesCopy
+                let attr = changeScrollPercentage(itemAttributesCopy)
+                
+                cachedItemsAttributes[itemAttributes.indexPath] = attr
             }
             return cachedItemsAttributes.map { $0.value }.filter { $0.frame.intersects(rect) }
     }
@@ -96,7 +122,7 @@ class CoverLayout : UICollectionViewFlowLayout {
         return layoutAttributesForElements(in: searchRect)?.min(by: { abs($0.center.x - xPosition) < abs($1.center.x - xPosition) })
     }
     
-    func changeLayoutAttributes(_ attributes: UICollectionViewLayoutAttributes) {
+    func changeLayoutAttributes(_ attributes: CoverLayoutAttributes) {
         let collectionCenter = collectionView!.frame.size.width/2
         let offset = collectionView!.contentOffset.x
         let normalizedCenter = attributes.center.x - offset
@@ -107,5 +133,23 @@ class CoverLayout : UICollectionViewFlowLayout {
         let ratio = (maxDistance - distance)/maxDistance
         let scale = ratio * (1 - self.scale) + self.scale
         attributes.transform3D = CATransform3DScale(CATransform3DIdentity, scale, scale, 1)
+    }
+    
+    private var continuousFocusedIndex: CGFloat {
+        guard let collectionView = collectionView else { return 0 }
+        let offset = collectionView.bounds.width / 2 + collectionView.contentOffset.x - itemSize.width / 2
+        return offset / (itemSize.width + (collectionView.bounds.width - itemSize.width*3)/CGFloat(4))
+    }
+    
+    func  changeScrollPercentage(_ attributes: CoverLayoutAttributes) -> CoverLayoutAttributes{
+        let roundedFocusedIndex = round(continuousFocusedIndex)
+        if (attributes.indexPath.item == Int(roundedFocusedIndex)){
+            let shiftArea = (roundedFocusedIndex - 0.5)...(roundedFocusedIndex + 0.5)
+            let distanceToClosestIdentityPoint = min(abs(continuousFocusedIndex - shiftArea.lowerBound), abs(continuousFocusedIndex - shiftArea.upperBound))
+            let normalizedShiftFactor = distanceToClosestIdentityPoint
+            print(100-normalizedShiftFactor*2)
+            attributes.scrollPercentage = 0+normalizedShiftFactor*2
+        }
+        return attributes
     }
 }
